@@ -1,0 +1,58 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests for a solution",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    // replace `01` here with the solution you like to debug.
+                    "--bin=01",
+                    "--package=advent_of_code"
+                ],
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug a solution",
+            "cargo": {
+                "args": [
+                    "build",
+                    // replace `01` here with the solution you like to debug.
+                    "--bin=01",
+                    "--package=advent_of_code"
+                ],
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'advent_of_code'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--features=test_lib",
+                    "--package=advent_of_code"
+                ],
+                "filter": {
+                    "name": "advent_of_code",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
