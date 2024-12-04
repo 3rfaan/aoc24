@@ -26,32 +26,32 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let re = Regex::new(
         r"(?x)
-            (do\(\))            # match literal `do()`
-            |(don't\(\))        # match literal `don't()`
-            |mul                # match literal `mul`
+            (?<do>do\(\))           # match literal `do()`
+            |(?<dont>don't\(\))     # match literal `don't()`
+            |mul                    # match literal `mul`
             \(
-            ([0-9]{1,3})        # first operand capture group
+            (?<op1>[0-9]{1,3})      # first operand
             ,
-            ([0-9]{1,3})        # second operand capture group
+            (?<op2>[0-9]{1,3})      # second operand
             \)
         ",
     )
     .unwrap();
 
     let mut sum = 0;
-    let mut is_enabled = true;
+    let mut enabled = true;
 
     for cap in re.captures_iter(input) {
-        if let Some(_) = cap.get(1) {
-            is_enabled = true;
-        } else if let Some(_) = cap.get(2) {
-            is_enabled = false;
-        } else if let (Some(op1), Some(op2)) = (cap.get(3), cap.get(4)) {
-            if is_enabled {
-                let operand1: u32 = op1.as_str().parse().unwrap();
-                let operand2: u32 = op2.as_str().parse().unwrap();
+        if let Some(_) = cap.name("do") {
+            enabled = true;
+        } else if let Some(_) = cap.name("dont") {
+            enabled = false;
+        } else if let (Some(op1), Some(op2)) = (cap.name("op1"), cap.name("op2")) {
+            if enabled {
+                let op1: u32 = op1.as_str().parse().unwrap();
+                let op2: u32 = op2.as_str().parse().unwrap();
 
-                sum += operand1 * operand2;
+                sum += op1 * op2;
             }
         }
     }
