@@ -39,8 +39,8 @@ pub fn part_two(input: &str) -> Option<u32> {
         (lhs.push(nums[0]), rhs.push(nums[1]));
     }
 
-    for num in lhs {
-        sum += rhs.iter().filter(|n| num == **n).sum::<u32>();
+    for num_l in lhs {
+        sum += rhs.iter().filter(|&num_r| *num_r == num_l).sum::<u32>();
     }
 
     Some(sum)
