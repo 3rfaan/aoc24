@@ -17,7 +17,11 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     let sum = re
         .captures_iter(input)
-        .map(|cap| cap["op1"].parse::<u32>().unwrap() * cap["op2"].parse::<u32>().unwrap())
+        .filter_map(|cap| {
+            let op1 = cap["op1"].parse::<u32>().ok()?;
+            let op2 = cap["op2"].parse::<u32>().ok()?;
+            Some(op1 * op2)
+        })
         .sum();
 
     Some(sum)
@@ -38,23 +42,31 @@ pub fn part_two(input: &str) -> Option<u32> {
     )
     .unwrap();
 
-    let mut sum = 0;
     let mut enabled = true;
 
-    for cap in re.captures_iter(input) {
-        if let Some(_) = cap.name("do") {
-            enabled = true;
-        } else if let Some(_) = cap.name("dont") {
-            enabled = false;
-        } else if let (Some(op1), Some(op2)) = (cap.name("op1"), cap.name("op2")) {
-            if enabled {
-                let op1: u32 = op1.as_str().parse().unwrap();
-                let op2: u32 = op2.as_str().parse().unwrap();
+    let sum = re
+        .captures_iter(input)
+        .filter_map(|cap| {
+            let full_match = &cap[0];
 
-                sum += op1 * op2;
+            match (full_match, enabled) {
+                ("do()", _) => {
+                    enabled = true;
+                    None
+                }
+                ("don't()", _) => {
+                    enabled = false;
+                    None
+                }
+                (_, true) => {
+                    let op1 = cap["op1"].parse::<u32>().ok()?;
+                    let op2 = cap["op2"].parse::<u32>().ok()?;
+                    Some(op1 * op2)
+                }
+                _ => None,
             }
-        }
-    }
+        })
+        .sum();
 
     Some(sum)
 }
