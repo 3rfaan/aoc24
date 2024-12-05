@@ -47,9 +47,9 @@ pub fn part_two(input: &str) -> Option<u32> {
     let sum = re
         .captures_iter(input)
         .filter_map(|cap| {
-            let full_match = &cap[0];
+            let r#match = &cap[0];
 
-            match (full_match, enabled) {
+            match (r#match, enabled) {
                 ("do()", _) => {
                     enabled = true;
                     None
