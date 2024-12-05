@@ -24,12 +24,11 @@ impl Grid {
     }
 
     fn walk(&self, word: &str, row: usize, col: usize, dir: &Direction) -> bool {
-        let word_chars: Vec<char> = word.chars().collect();
-        let (dx, dy) = dir.offset();
+        let (off_x, off_y) = dir.offset();
 
-        for word_idx in 0..word_chars.len() {
-            let new_row = row as isize + word_idx as isize * dx;
-            let new_col = col as isize + word_idx as isize * dy;
+        for (word_idx, word_char) in word.chars().enumerate() {
+            let new_row = row as isize + word_idx as isize * off_x;
+            let new_col = col as isize + word_idx as isize * off_y;
 
             if new_row < 0
                 || new_col < 0
@@ -41,7 +40,7 @@ impl Grid {
 
             let (nx, ny) = (new_row as usize, new_col as usize);
 
-            if self.grid[nx][ny] != word_chars[word_idx] {
+            if self.grid[nx][ny] != word_char {
                 return false;
             }
         }
@@ -52,8 +51,7 @@ impl Grid {
 impl From<&str> for Grid {
     fn from(input: &str) -> Self {
         let grid: Vec<Vec<char>> = input.lines().map(|row| row.chars().collect()).collect();
-        let rows = grid.len();
-        let cols = grid[0].len();
+        let (rows, cols) = (grid.len(), grid[0].len());
 
         Self { grid, rows, cols }
     }
