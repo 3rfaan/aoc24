@@ -19,9 +19,24 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let manual = Manual::from(input);
+    let mut sum = 0;
+
+    manual
+        .updates
+        .iter()
+        .filter(|&update| !manual.is_correct_order(update)) // Find incorrect updates
+        .for_each(|update| {
+            let sorted_update = manual.sort_incorrect_update(update.clone());
+
+            let mid = sorted_update.len() / 2;
+            sum += sorted_update[mid];
+        });
+
+    Some(sum)
 }
 
+#[derive(Clone)]
 struct Manual {
     rules: Vec<(u32, u32)>,
     updates: Vec<Vec<u32>>,
@@ -41,6 +56,20 @@ impl Manual {
                 (Some(&x), Some(&y)) => x < y,
                 _ => true,
             })
+    }
+
+    fn sort_incorrect_update(&self, mut update: Vec<u32>) -> Vec<u32> {
+        update.sort_by(|&x, &y| {
+            if self.rules.contains(&(x, y)) {
+                std::cmp::Ordering::Less
+            } else if self.rules.contains(&(y, x)) {
+                std::cmp::Ordering::Greater
+            } else {
+                std::cmp::Ordering::Equal
+            }
+        });
+
+        update
     }
 }
 
