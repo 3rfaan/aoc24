@@ -32,11 +32,11 @@ struct Grid {
 }
 
 impl Grid {
-    fn get(&self, r: usize, c: usize) -> u8 {
+    fn get(&self, row: isize, col: isize) -> u8 {
         *self
             .bytes
-            .get(r)
-            .and_then(|row| row.get(c))
+            .get(row as usize)
+            .and_then(|row| row.get(col as usize))
             .unwrap_or(&b'.')
     }
 
@@ -54,7 +54,9 @@ impl Grid {
         .iter()
         .filter(|(off_x, off_y)| {
             (0..4).all(|i| {
-                let (new_row, new_col) = (row + (off_x * i) as usize, col + (off_y * i) as usize);
+                let new_row = row as isize + (off_x * i);
+                let new_col = col as isize + (off_y * i);
+
                 self.get(new_row, new_col) == b"XMAS"[i as usize]
             })
         })
@@ -62,6 +64,8 @@ impl Grid {
     }
 
     fn crossmas_count(&self, row: usize, col: usize) -> bool {
+        let (row, col) = (row as isize, col as isize);
+
         let diag1 = [self.get(row - 1, col - 1), self.get(row + 1, col + 1)];
         let diag2 = [self.get(row - 1, col + 1), self.get(row + 1, col - 1)];
 
@@ -71,14 +75,10 @@ impl Grid {
 
 impl From<&str> for Grid {
     fn from(input: &str) -> Self {
-        let grid: Vec<Vec<u8>> = input.lines().map(|row| row.bytes().collect()).collect();
-        let (rows, cols) = (grid.len(), grid.first().map_or(0, |row| row.len()));
+        let bytes: Vec<Vec<u8>> = input.lines().map(|row| row.bytes().collect()).collect();
+        let (rows, cols) = (bytes.len(), bytes.first().map_or(0, |row| row.len()));
 
-        Self {
-            bytes: grid,
-            rows,
-            cols,
-        }
+        Self { bytes, rows, cols }
     }
 }
 
