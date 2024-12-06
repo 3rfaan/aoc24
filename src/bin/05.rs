@@ -9,7 +9,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     manual
         .updates
         .iter()
-        .filter(|&update| manual.is_correct_order(&update))
+        .filter(|&update| manual.correct(&update))
         .for_each(|update| {
             let mid = update.len() / 2;
             sum += update[mid]
@@ -25,9 +25,9 @@ pub fn part_two(input: &str) -> Option<u32> {
     manual
         .updates
         .iter()
-        .filter(|&update| !manual.is_correct_order(update)) // Find incorrect updates
+        .filter(|&update| !manual.correct(update)) // Find incorrect updates
         .for_each(|update| {
-            let sorted_update = manual.sort_incorrect_update(update.clone());
+            let sorted_update = manual.fix(update.clone());
 
             let mid = sorted_update.len() / 2;
             sum += sorted_update[mid];
@@ -43,7 +43,7 @@ struct Manual {
 }
 
 impl Manual {
-    fn is_correct_order(&self, update: &Vec<u32>) -> bool {
+    fn correct(&self, update: &Vec<u32>) -> bool {
         let map: HashMap<u32, usize> = update
             .iter()
             .enumerate()
@@ -58,7 +58,7 @@ impl Manual {
             })
     }
 
-    fn sort_incorrect_update(&self, mut update: Vec<u32>) -> Vec<u32> {
+    fn fix(&self, mut update: Vec<u32>) -> Vec<u32> {
         update.sort_by(|&x, &y| {
             if self.rules.contains(&(x, y)) {
                 std::cmp::Ordering::Less
@@ -91,7 +91,7 @@ impl From<&str> for Manual {
             .map(|update| {
                 update
                     .split(',')
-                    .filter_map(|num| num.parse::<u32>().ok())
+                    .filter_map(|num| num.parse().ok())
                     .collect()
             })
             .collect();
