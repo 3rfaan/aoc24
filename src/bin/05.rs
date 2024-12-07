@@ -9,7 +9,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     manual
         .updates
         .iter()
-        .filter(|&update| manual.correct(&update))
+        .filter(|&update| manual.correct(update))
         .for_each(|update| {
             let mid = update.len() / 2;
             sum += update[mid]
@@ -43,7 +43,7 @@ struct Manual {
 }
 
 impl Manual {
-    fn correct(&self, update: &Vec<u32>) -> bool {
+    fn correct(&self, update: &[u32]) -> bool {
         let map: HashMap<u32, usize> = update
             .iter()
             .enumerate()

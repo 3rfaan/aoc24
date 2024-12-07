@@ -12,10 +12,12 @@ pub fn part_one(input: &str) -> Option<i32> {
             .filter_map(|n| n.parse().ok())
             .collect();
 
-        (lhs.push(nums[0]), rhs.push(nums[1]));
+        lhs.push(nums[0]);
+        rhs.push(nums[1]);
     }
 
-    (lhs.sort(), rhs.sort());
+    lhs.sort();
+    rhs.sort();
 
     // Subtract int at index i in rhs vec from int at index i in lhs vec, take absolute value and
     // then sum with difference from previous iteration, in the end we store the sum of all
@@ -36,7 +38,8 @@ pub fn part_two(input: &str) -> Option<u32> {
             .filter_map(|n| n.parse().ok())
             .collect();
 
-        (lhs.push(nums[0]), rhs.push(nums[1]));
+        lhs.push(nums[0]);
+        rhs.push(nums[1]);
     }
 
     for num_l in lhs {
