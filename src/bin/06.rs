@@ -3,14 +3,21 @@ use std::{collections::HashSet, ops::Add};
 advent_of_code::solution!(6);
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let mut lab = Lab::from(input);
-    let mut visited = HashSet::from([lab.guard.pos]); // Insert starting position
-
-    Some(lab.walk(&mut visited))
+    Some(Lab::from(input).walk().len() as u32)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let mut lab = Lab::from(input);
+
+    let origin = lab.guard;
+    let visited = lab.walk();
+
+    Some(
+        visited
+            .iter()
+            .filter(|&&obstacle| lab.looping(origin, obstacle))
+            .count() as u32,
+    )
 }
 
 struct Lab {
@@ -19,32 +26,62 @@ struct Lab {
 }
 
 impl Lab {
-    fn get(&self, &Pos(x, y): &Pos) -> Option<&u8> {
-        self.grid.get(x as usize)?.get(y as usize)
+    fn get(&self, Pos(x, y): Pos) -> Option<u8> {
+        self.grid.get(x as usize)?.get(y as usize).copied()
     }
 
-    fn walk(&mut self, visited: &mut HashSet<Pos>) -> u32 {
-        let mut count = 1;
+    fn set(&mut self, Pos(x, y): Pos, val: u8) {
+        if let Some(cell) = self
+            .grid
+            .get_mut(x as usize)
+            .and_then(|row| row.get_mut(y as usize))
+        {
+            *cell = val;
+        }
+    }
+
+    fn walk(&mut self) -> HashSet<Pos> {
+        let mut visited = HashSet::new();
 
         loop {
-            let offset = self.guard.dir.offset();
-            let new_pos = self.guard.pos + offset;
+            let next = self.guard.pos + self.guard.dir.offset();
 
-            match self.get(&new_pos) {
-                Some(&b'#') => self.guard.dir = self.guard.dir.turn_right(),
+            visited.insert(self.guard.pos);
+
+            match self.get(next) {
+                Some(b'#') => self.guard.dir = self.guard.dir.turn(),
+                Some(_) => self.guard.pos = next,
                 None => break,
-                _ => {
-                    self.guard.pos = new_pos;
-                    if visited.insert(new_pos) {
-                        count += 1;
-                    }
-                }
             }
         }
-        count
+        visited
+    }
+
+    fn looping(&mut self, origin: Guard, obstacle: Pos) -> bool {
+        let mut visited = HashSet::new();
+
+        self.guard = origin;
+        self.set(obstacle, b'O');
+
+        let looping = loop {
+            if !visited.insert((self.guard.pos, self.guard.dir)) {
+                break true;
+            }
+            let next = self.guard.pos + self.guard.dir.offset();
+
+            match self.get(next) {
+                Some(b'#' | b'O') => self.guard.dir = self.guard.dir.turn(),
+                Some(_) => self.guard.pos = next,
+                None => break false,
+            }
+        };
+
+        self.set(obstacle, b'.');
+        looping
     }
 }
 
+#[derive(Copy, Clone)]
 struct Guard {
     pos: Pos,
     dir: Dir,
@@ -52,15 +89,15 @@ struct Guard {
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 struct Pos(i32, i32);
-struct Off(i32, i32);
 
 impl Add<Off> for Pos {
     type Output = Self;
-
-    fn add(self, other: Off) -> Self::Output {
-        Self(self.0 + other.0, self.1 + other.1)
+    fn add(self, Off(dx, dy): Off) -> Self::Output {
+        Pos(self.0 + dx, self.1 + dy)
     }
 }
+
+struct Off(i32, i32);
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum Dir {
@@ -71,7 +108,7 @@ enum Dir {
 }
 
 impl Dir {
-    fn offset(&self) -> Off {
+    fn offset(self) -> Off {
         match self {
             Dir::Up => Off(-1, 0),
             Dir::Down => Off(1, 0),
@@ -80,7 +117,7 @@ impl Dir {
         }
     }
 
-    fn turn_right(&mut self) -> Dir {
+    fn turn(self) -> Self {
         match self {
             Dir::Up => Dir::Right,
             Dir::Right => Dir::Down,
@@ -92,39 +129,19 @@ impl Dir {
 
 impl From<&str> for Lab {
     fn from(input: &str) -> Self {
-        let area: Vec<Vec<u8>> = input.lines().map(|row| row.bytes().collect()).collect();
-
-        let pos = area
+        let grid: Vec<Vec<u8>> = input.lines().map(|line| line.bytes().collect()).collect();
+        let pos = grid
             .iter()
             .enumerate()
-            .flat_map(|(row_idx, row)| {
+            .find_map(|(x, row)| {
                 row.iter()
-                    .enumerate()
-                    .map(move |(col_idx, &col)| (col, row_idx, col_idx))
+                    .position(|&c| c == b'^')
+                    .map(|y| Pos(x as i32, y as i32))
             })
-            .find(|&(col, _, _)| col == b'^')
-            .map(|(_, row_idx, col_idx)| Pos(row_idx as i32, col_idx as i32))
             .unwrap_or_default();
-
-        let guard = Guard { pos, dir: Dir::Up };
-
-        Self { grid: area, guard }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_part_one() {
-        let result = part_one("test input");
-        assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_part_two() {
-        let result = part_two("test input");
-        assert_eq!(result, None);
+        Self {
+            grid,
+            guard: Guard { pos, dir: Dir::Up },
+        }
     }
 }
