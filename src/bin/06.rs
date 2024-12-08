@@ -75,7 +75,6 @@ impl Lab {
                 None => break false,
             }
         };
-
         self.set(obstacle, b'.');
         looping
     }
@@ -87,11 +86,12 @@ struct Guard {
     dir: Dir,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
 struct Pos(i32, i32);
 
 impl Add<Off> for Pos {
     type Output = Self;
+
     fn add(self, Off(dx, dy): Off) -> Self::Output {
         Pos(self.0 + dx, self.1 + dy)
     }
@@ -99,7 +99,7 @@ impl Add<Off> for Pos {
 
 struct Off(i32, i32);
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 enum Dir {
     Up,
     Down,
@@ -143,5 +143,22 @@ impl From<&str> for Lab {
             grid,
             guard: Guard { pos, dir: Dir::Up },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_part_one() {
+        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_part_two() {
+        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
+        assert_eq!(result, None);
     }
 }
