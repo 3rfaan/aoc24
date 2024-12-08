@@ -8,14 +8,12 @@ pub fn part_one(input: &str) -> Option<u32> {
 
 pub fn part_two(input: &str) -> Option<u32> {
     let mut lab = Lab::from(input);
-
     let origin = lab.guard;
-    let visited = lab.walk();
 
     Some(
-        visited
+        lab.walk()
             .iter()
-            .filter(|&&obstacle| lab.looping(origin, obstacle))
+            .filter(|&&obstacle| lab.is_looping(origin, obstacle))
             .count() as u32,
     )
 }
@@ -44,10 +42,9 @@ impl Lab {
         let mut visited = HashSet::new();
 
         loop {
-            let next = self.guard.pos + self.guard.dir.offset();
-
             visited.insert(self.guard.pos);
 
+            let next = self.guard.pos + self.guard.dir.offset();
             match self.get(next) {
                 Some(b'#') => self.guard.dir = self.guard.dir.turn(),
                 Some(_) => self.guard.pos = next,
@@ -57,7 +54,7 @@ impl Lab {
         visited
     }
 
-    fn looping(&mut self, origin: Guard, obstacle: Pos) -> bool {
+    fn is_looping(&mut self, origin: Guard, obstacle: Pos) -> bool {
         let mut visited = HashSet::new();
 
         self.guard = origin;
@@ -68,7 +65,6 @@ impl Lab {
                 break true;
             }
             let next = self.guard.pos + self.guard.dir.offset();
-
             match self.get(next) {
                 Some(b'#' | b'O') => self.guard.dir = self.guard.dir.turn(),
                 Some(_) => self.guard.pos = next,
