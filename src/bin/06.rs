@@ -3,62 +3,66 @@ use std::{collections::HashSet, ops::Add};
 advent_of_code::solution!(6);
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let mut map = Map::from(input);
+    let mut lab = Lab::from(input);
+    let mut visited = HashSet::from([lab.guard.pos]); // Insert starting position
 
-    Some(map.walk())
+    Some(lab.walk(&mut visited))
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
     None
 }
 
-struct Map {
-    area: Vec<Vec<u8>>,
-    pos: Point,
-    dir: Dir,
-    visited: HashSet<Point>,
+struct Lab {
+    grid: Vec<Vec<u8>>,
+    guard: Guard,
 }
 
-impl Map {
-    fn get(&self, &Point(x, y): &Point) -> Option<&u8> {
-        self.area.get(x as usize)?.get(y as usize)
+impl Lab {
+    fn get(&self, &Pos(x, y): &Pos) -> Option<&u8> {
+        self.grid.get(x as usize)?.get(y as usize)
     }
 
-    fn walk(&mut self) -> u32 {
+    fn walk(&mut self, visited: &mut HashSet<Pos>) -> u32 {
         let mut count = 1;
 
         loop {
-            let offset = self.dir.offset();
-            let new_pos = self.pos + offset;
+            let offset = self.guard.dir.offset();
+            let new_pos = self.guard.pos + offset;
 
             match self.get(&new_pos) {
-                Some(&b'#') => self.dir = self.dir.turn_right(),
+                Some(&b'#') => self.guard.dir = self.guard.dir.turn_right(),
                 None => break,
                 _ => {
-                    self.pos = new_pos;
-                    if self.visited.insert(new_pos) {
+                    self.guard.pos = new_pos;
+                    if visited.insert(new_pos) {
                         count += 1;
                     }
                 }
             }
         }
-
         count
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
-struct Point(i32, i32);
+struct Guard {
+    pos: Pos,
+    dir: Dir,
+}
 
-impl Add<(i32, i32)> for Point {
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+struct Pos(i32, i32);
+struct Off(i32, i32);
+
+impl Add<Off> for Pos {
     type Output = Self;
 
-    fn add(self, other: (i32, i32)) -> Self::Output {
+    fn add(self, other: Off) -> Self::Output {
         Self(self.0 + other.0, self.1 + other.1)
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum Dir {
     Up,
     Down,
@@ -67,12 +71,12 @@ enum Dir {
 }
 
 impl Dir {
-    fn offset(&self) -> (i32, i32) {
+    fn offset(&self) -> Off {
         match self {
-            Dir::Up => (-1, 0),
-            Dir::Down => (1, 0),
-            Dir::Right => (0, 1),
-            Dir::Left => (0, -1),
+            Dir::Up => Off(-1, 0),
+            Dir::Down => Off(1, 0),
+            Dir::Right => Off(0, 1),
+            Dir::Left => Off(0, -1),
         }
     }
 
@@ -86,7 +90,7 @@ impl Dir {
     }
 }
 
-impl From<&str> for Map {
+impl From<&str> for Lab {
     fn from(input: &str) -> Self {
         let area: Vec<Vec<u8>> = input.lines().map(|row| row.bytes().collect()).collect();
 
@@ -99,17 +103,12 @@ impl From<&str> for Map {
                     .map(move |(col_idx, &col)| (col, row_idx, col_idx))
             })
             .find(|&(col, _, _)| col == b'^')
-            .map(|(_, row_idx, col_idx)| Point(row_idx as i32, col_idx as i32))
+            .map(|(_, row_idx, col_idx)| Pos(row_idx as i32, col_idx as i32))
             .unwrap_or_default();
 
-        let visited = HashSet::from([pos]); // Insert starting position
+        let guard = Guard { pos, dir: Dir::Up };
 
-        Self {
-            area,
-            pos,
-            dir: Dir::Up,
-            visited,
-        }
+        Self { grid: area, guard }
     }
 }
 
