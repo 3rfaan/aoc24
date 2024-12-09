@@ -1,23 +1,11 @@
 advent_of_code::solution!(7);
 
-pub fn part_one(input: &str) -> Option<u64> {
-    Some(
-        parse(input)
-            .iter()
-            .filter(|(test, nums)| solve(*test, nums, Concat::Off))
-            .map(|(test, _)| test)
-            .sum(),
-    )
+pub fn part_one(puzzle: &str) -> Option<u64> {
+    run(puzzle, &Concat::Off)
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
-    Some(
-        parse(input)
-            .iter()
-            .filter(|(test, num)| solve(*test, num, Concat::On))
-            .map(|(test, _)| test)
-            .sum(),
-    )
+pub fn part_two(puzzle: &str) -> Option<u64> {
+    run(puzzle, &Concat::On)
 }
 
 enum Concat {
@@ -25,13 +13,23 @@ enum Concat {
     Off,
 }
 
-fn concat(a: u64, b: u64) -> u64 {
-    let b_digs = (b as f64).log10().floor() as u32 + 1;
-
-    a * 10u64.pow(b_digs) + b
+fn run(puzzle: &str, mode: &Concat) -> Option<u64> {
+    Some(
+        parse(puzzle)
+            .iter()
+            .filter(|(test, num)| solve(*test, num, mode))
+            .map(|(test, _)| test)
+            .sum(),
+    )
 }
 
-fn solve(test: u64, nums: &[u64], mode: Concat) -> bool {
+fn concat(a: u64, b: u64) -> u64 {
+    let b_len = (b as f64).log10().floor() as u32 + 1;
+
+    a * 10u64.pow(b_len) + b
+}
+
+fn solve(test: u64, nums: &[u64], mode: &Concat) -> bool {
     nums.iter()
         .skip(1)
         .fold(vec![nums[0]], |results, &num| {
