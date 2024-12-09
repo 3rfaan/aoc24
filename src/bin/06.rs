@@ -38,17 +38,29 @@ impl Lab {
         }
     }
 
+    fn next(&mut self) -> Option<()> {
+        let next = self.guard.pos + self.guard.dir.offset();
+        match self.get(next) {
+            Some(b'#' | b'O') => {
+                self.guard.dir = self.guard.dir.turn();
+                Some(())
+            }
+            Some(_) => {
+                self.guard.pos = next;
+                Some(())
+            }
+            None => None,
+        }
+    }
+
     fn walk(&mut self) -> HashSet<Pos> {
         let mut visited = HashSet::new();
 
         loop {
             visited.insert(self.guard.pos);
 
-            let next = self.guard.pos + self.guard.dir.offset();
-            match self.get(next) {
-                Some(b'#') => self.guard.dir = self.guard.dir.turn(),
-                Some(_) => self.guard.pos = next,
-                None => break,
+            if let None = self.next() {
+                break;
             }
         }
         visited
@@ -64,11 +76,9 @@ impl Lab {
             if !visited.insert((self.guard.pos, self.guard.dir)) {
                 break true;
             }
-            let next = self.guard.pos + self.guard.dir.offset();
-            match self.get(next) {
-                Some(b'#' | b'O') => self.guard.dir = self.guard.dir.turn(),
-                Some(_) => self.guard.pos = next,
-                None => break false,
+
+            if let None = self.next() {
+                break false;
             }
         };
         self.set(obstacle, b'.');
