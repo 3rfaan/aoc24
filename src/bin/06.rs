@@ -59,7 +59,7 @@ impl Lab {
         loop {
             visited.insert(self.guard.pos);
 
-            if let None = self.next() {
+            if self.next().is_none() {
                 break;
             }
         }
@@ -77,7 +77,7 @@ impl Lab {
                 break true;
             }
 
-            if let None = self.next() {
+            if self.next().is_none() {
                 break false;
             }
         };
