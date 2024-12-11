@@ -51,7 +51,7 @@ impl Map {
     }
 
     fn harmonics(&self) -> HashSet<Point> {
-        let mut expansions = HashSet::new();
+        let mut antinodes = HashSet::new();
         let pairs = self.get_pairs();
 
         for (p1, p2) in pairs {
@@ -59,16 +59,16 @@ impl Map {
                 .into_iter()
                 .for_each(|(mut point, offset)| {
                     while self.get(point).is_some() {
-                        expansions.insert(point);
+                        antinodes.insert(point);
                         point += offset;
                     }
                 })
         }
-        expansions
+        antinodes
     }
 }
 
-#[derive(Clone, Copy, Default, Hash, Eq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
 struct Point(i32, i32);
 
 impl Add for Point {
@@ -84,12 +84,6 @@ impl Sub for Point {
 
     fn sub(self, other: Self) -> Self {
         Self(self.0 - other.0, self.1 - other.1)
-    }
-}
-
-impl PartialEq for Point {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0 && self.1 == other.1
     }
 }
 
@@ -111,10 +105,13 @@ impl From<&str> for Map {
                     (cell != b'.').then_some((cell, Point(x as i32, y as i32)))
                 })
             })
-            .fold(HashMap::new(), |mut antennas, (sym, pos)| {
-                antennas.entry(sym).or_insert_with(Vec::new).push(pos);
-                antennas
-            });
+            .fold(
+                HashMap::new(),
+                |mut antennas: HashMap<u8, Vec<Point>>, (sym, pos)| {
+                    antennas.entry(sym).or_default().push(pos);
+                    antennas
+                },
+            );
 
         Self { grid, antennas }
     }
