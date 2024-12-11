@@ -13,7 +13,6 @@ pub fn part_two(input: &str) -> Option<u32> {
     Some(Map::from(input).harmonics().len() as u32)
 }
 
-#[derive(Debug)]
 struct Map {
     grid: Vec<Vec<u8>>,
     antennas: HashMap<u8, Vec<Point>>,
@@ -25,18 +24,23 @@ impl Map {
     }
 
     fn signal(&self) -> HashSet<Point> {
-        self.antennas
-            .values()
-            .flat_map(|antenna| {
-                antenna.iter().flat_map(move |&p1| {
-                    antenna.iter().flat_map(move |&p2| {
-                        [p1 + (p1 - p2), p2 + (p2 - p1)]
-                            .into_iter()
-                            .filter(move |&antinode| p1 != p2 && self.get(antinode).is_some())
-                    })
+        let mut antinodes = HashSet::new();
+
+        for antenna in self.antennas.values() {
+            antenna
+                .iter()
+                .flat_map(|&p1| antenna.iter().map(move |&p2| (p1, p2)))
+                .filter(|(p1, p2)| p1 != p2)
+                .for_each(|(p1, p2)| {
+                    [p1 + (p1 - p2), p2 + (p2 - p1)]
+                        .into_iter()
+                        .filter(move |&antinode| self.get(antinode).is_some())
+                        .for_each(|antinode| {
+                            antinodes.insert(antinode);
+                        })
                 })
-            })
-            .collect()
+        }
+        antinodes
     }
 
     fn harmonics(&self) -> HashSet<Point> {
@@ -64,7 +68,7 @@ impl Map {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Hash, Eq)]
+#[derive(Clone, Copy, Default, Hash, Eq)]
 struct Point(i32, i32);
 
 impl Add for Point {
