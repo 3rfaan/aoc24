@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    ops::{Add, Sub},
+    ops::{Add, AddAssign, Sub},
 };
 
 advent_of_code::solution!(8);
@@ -10,20 +10,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let test = "............
-........0...
-.....0......
-.......0....
-....0.......
-......A.....
-............
-............
-........A...
-.........A..
-............
-............";
-
-    None
+    Some(Map::from(input).harmonics().len() as u32)
 }
 
 #[derive(Debug)]
@@ -40,9 +27,9 @@ impl Map {
     fn signal(&self) -> HashSet<Point> {
         self.antennas
             .values()
-            .flat_map(|antennas| {
-                antennas.iter().flat_map(move |&p1| {
-                    antennas.iter().flat_map(move |&p2| {
+            .flat_map(|antenna| {
+                antenna.iter().flat_map(move |&p1| {
+                    antenna.iter().flat_map(move |&p2| {
                         [p1 + (p1 - p2), p2 + (p2 - p1)]
                             .into_iter()
                             .filter(move |&antinode| p1 != p2 && self.get(antinode).is_some())
@@ -50,6 +37,30 @@ impl Map {
                 })
             })
             .collect()
+    }
+
+    fn harmonics(&self) -> HashSet<Point> {
+        let mut expansions = HashSet::new();
+
+        for antenna in self.antennas.values() {
+            let pairs: Vec<(Point, Point)> = antenna
+                .iter()
+                .flat_map(|&p1| antenna.iter().map(move |&p2| (p1, p2)))
+                .filter(|(p1, p2)| p1 != p2)
+                .collect();
+
+            for (p1, p2) in pairs {
+                let offsets = [(p1, p1 - p2), (p2, p2 - p1)];
+
+                for (mut point, offset) in offsets {
+                    while self.get(point).is_some() {
+                        expansions.insert(point);
+                        point += offset;
+                    }
+                }
+            }
+        }
+        expansions
     }
 }
 
@@ -75,6 +86,12 @@ impl Sub for Point {
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0 && self.1 == other.1
+    }
+}
+
+impl AddAssign for Point {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self(self.0 + other.0, self.1 + other.1)
     }
 }
 
