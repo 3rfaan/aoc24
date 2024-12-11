@@ -1,11 +1,11 @@
 advent_of_code::solution!(7);
 
-pub fn part_one(puzzle: &str) -> Option<u64> {
-    run(puzzle, &Concat::Off)
+pub fn part_one(input: &str) -> Option<u64> {
+    run(input, &Concat::Off)
 }
 
-pub fn part_two(puzzle: &str) -> Option<u64> {
-    run(puzzle, &Concat::On)
+pub fn part_two(input: &str) -> Option<u64> {
+    run(input, &Concat::On)
 }
 
 enum Concat {
@@ -44,12 +44,12 @@ fn solve(test: u64, nums: &[u64], mode: &Concat) -> bool {
         .contains(&test)
 }
 
-fn parse(input: &str) -> Vec<(u64, Vec<u64>)> {
-    input
+fn parse(puzzle: &str) -> Vec<(u64, Vec<u64>)> {
+    puzzle
         .lines()
         .filter_map(|line| {
             let (test, nums) = line.split_once(':')?;
-            let test = test.trim().parse().ok()?;
+            let test = test.parse().ok()?;
             let nums = nums
                 .split_whitespace()
                 .filter_map(|num| num.parse().ok())
