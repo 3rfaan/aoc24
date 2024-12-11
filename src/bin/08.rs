@@ -23,21 +23,28 @@ impl Map {
         self.grid.get(x as usize)?.get(y as usize).copied()
     }
 
+    fn get_pairs(&self) -> Vec<(Point, Point)> {
+        self.antennas
+            .values()
+            .flat_map(|antenna| {
+                antenna
+                    .iter()
+                    .flat_map(|&p1| antenna.iter().map(move |&p2| (p1, p2)))
+                    .filter(|(p1, p2)| p1 != p2)
+            })
+            .collect()
+    }
+
     fn signal(&self) -> HashSet<Point> {
         let mut antinodes = HashSet::new();
+        let pairs = self.get_pairs();
 
-        for antenna in self.antennas.values() {
-            antenna
-                .iter()
-                .flat_map(|&p1| antenna.iter().map(move |&p2| (p1, p2)))
-                .filter(|(p1, p2)| p1 != p2)
-                .for_each(|(p1, p2)| {
-                    [p1 + (p1 - p2), p2 + (p2 - p1)]
-                        .into_iter()
-                        .filter(move |&antinode| self.get(antinode).is_some())
-                        .for_each(|antinode| {
-                            antinodes.insert(antinode);
-                        })
+        for (p1, p2) in pairs {
+            [p1 + (p1 - p2), p2 + (p2 - p1)]
+                .into_iter()
+                .filter(move |&antinode| self.get(antinode).is_some())
+                .for_each(|antinode| {
+                    antinodes.insert(antinode);
                 })
         }
         antinodes
@@ -45,24 +52,17 @@ impl Map {
 
     fn harmonics(&self) -> HashSet<Point> {
         let mut expansions = HashSet::new();
+        let pairs = self.get_pairs();
 
-        for antenna in self.antennas.values() {
-            let pairs: Vec<(Point, Point)> = antenna
-                .iter()
-                .flat_map(|&p1| antenna.iter().map(move |&p2| (p1, p2)))
-                .filter(|(p1, p2)| p1 != p2)
-                .collect();
-
-            for (p1, p2) in pairs {
-                let offsets = [(p1, p1 - p2), (p2, p2 - p1)];
-
-                for (mut point, offset) in offsets {
+        for (p1, p2) in pairs {
+            [(p1, p1 - p2), (p2, p2 - p1)]
+                .into_iter()
+                .for_each(|(mut point, offset)| {
                     while self.get(point).is_some() {
                         expansions.insert(point);
                         point += offset;
                     }
-                }
-            }
+                })
         }
         expansions
     }
