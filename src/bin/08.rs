@@ -37,9 +37,8 @@ impl Map {
 
     fn signal(&self) -> HashSet<Point> {
         let mut antinodes = HashSet::new();
-        let pairs = self.get_pairs();
 
-        for (p1, p2) in pairs {
+        for (p1, p2) in self.get_pairs() {
             [p1 + (p1 - p2), p2 + (p2 - p1)]
                 .into_iter()
                 .filter(move |&antinode| self.get(antinode).is_some())
@@ -52,9 +51,8 @@ impl Map {
 
     fn harmonics(&self) -> HashSet<Point> {
         let mut antinodes = HashSet::new();
-        let pairs = self.get_pairs();
 
-        for (p1, p2) in pairs {
+        for (p1, p2) in self.get_pairs() {
             [(p1, p1 - p2), (p2, p2 - p1)]
                 .into_iter()
                 .for_each(|(mut point, offset)| {
