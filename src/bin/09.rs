@@ -1,14 +1,9 @@
+use std::collections::VecDeque;
+
 advent_of_code::solution!(9);
 
-pub fn part_one(input: &str) -> Option<u32> {
-    let test = "2333133121414131402";
-    let mut disk_map = DiskMap::from(test);
-
-    disk_map.defragment();
-
-    println!("{:?}", disk_map.disk);
-
-    None
+pub fn part_one(input: &str) -> Option<usize> {
+    Some(DiskMap::from(input).defragment().checksum())
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -16,59 +11,62 @@ pub fn part_two(input: &str) -> Option<u32> {
 }
 
 struct DiskMap {
-    disk: Vec<Block>,
+    disk: VecDeque<Block>,
 }
 
 impl DiskMap {
-    fn defragment(&mut self) {
-        let mut disk = Vec::new();
+    fn checksum(&self) -> usize {
+        self.disk
+            .iter()
+            .enumerate()
+            .filter_map(|(i, block)| match block {
+                Block::File(id) => Some(i * id),
+                _ => None,
+            })
+            .sum()
+    }
 
-        for block in &self.disk {
-            if let Block::File { id, count } = block {
-                for _ in 0..*count {
-                    disk.push(Block::File { id: *id, count: 1 })
+    fn defragment(mut self) -> Self {
+        let mut files = VecDeque::new();
+
+        while let Some(block) = self.disk.pop_front() {
+            match block {
+                Block::File(_) => files.push_back(block),
+                Block::Free => {
+                    while let Some(block) = self.disk.pop_back() {
+                        if let Block::File(back) = block {
+                            files.push_back(Block::File(back));
+                            break;
+                        }
+                    }
                 }
             }
         }
-
-        let free = self
-            .disk
-            .iter()
-            .filter_map(|block| match block {
-                Block::Free { count } => Some(*count),
-                _ => None,
-            })
-            .sum();
-
-        for _ in 0..free {
-            disk.push(Block::Free { count: 1 });
-        }
-
-        self.disk = disk;
+        Self { disk: files }
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Block {
-    File { id: usize, count: u32 },
-    Free { count: u32 },
+    File(usize),
+    Free,
 }
 
 impl From<&str> for DiskMap {
     fn from(puzzle: &str) -> Self {
-        let disk: Vec<Block> = puzzle
-            .chars()
-            .enumerate()
-            .filter_map(|(id, count)| {
-                count.to_digit(10).map(|count| {
-                    if id % 2 == 0 {
-                        Block::File { id: id / 2, count }
-                    } else {
-                        Block::Free { count }
+        let disk: VecDeque<Block> =
+            puzzle
+                .chars()
+                .enumerate()
+                .fold(VecDeque::new(), |mut block, (id, count)| {
+                    if let Some(count) = count.to_digit(10) {
+                        match id % 2 {
+                            0 => (0..count).for_each(|_| block.push_back(Block::File(id / 2))),
+                            _ => (0..count).for_each(|_| block.push_back(Block::Free)),
+                        }
                     }
-                })
-            })
-            .collect();
+                    block
+                });
 
         Self { disk }
     }
