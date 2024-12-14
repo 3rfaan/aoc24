@@ -3,13 +3,19 @@ use std::collections::VecDeque;
 advent_of_code::solution!(9);
 
 pub fn part_one(input: &str) -> Option<usize> {
-    Some(DiskMap::from(input).defragment().checksum())
+    Some(DiskMap::from(input).decompress().defragment().checksum())
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    Some(
+        DiskMap::from(input)
+            .defragment_retain_blocks()
+            .decompress()
+            .checksum(),
+    )
 }
 
+#[derive(Clone)]
 struct DiskMap {
     disk: VecDeque<Block>,
 }
@@ -20,22 +26,35 @@ impl DiskMap {
             .iter()
             .enumerate()
             .filter_map(|(i, block)| match block {
-                Block::File(id) => Some(i * id),
+                Block::File { id, .. } => Some(i * id),
                 _ => None,
             })
             .sum()
     }
 
-    fn defragment(mut self) -> Self {
+    fn decompress(self) -> Self {
+        Self {
+            disk: self
+                .disk
+                .into_iter()
+                .flat_map(|block| match block {
+                    Block::File { id, size } => vec![Block::File { id, size: 1 }; size],
+                    Block::Free { size } => vec![Block::Free { size: 1 }; size],
+                })
+                .collect(),
+        }
+    }
+
+    fn defragment(&mut self) -> Self {
         let mut files = VecDeque::new();
 
         while let Some(block) = self.disk.pop_front() {
             match block {
-                Block::File(_) => files.push_back(block),
-                Block::Free => {
+                Block::File { .. } => files.push_back(block),
+                Block::Free { .. } => {
                     while let Some(block) = self.disk.pop_back() {
-                        if let Block::File(back) = block {
-                            files.push_back(Block::File(back));
+                        if let Block::File { .. } = block {
+                            files.push_back(block);
                             break;
                         }
                     }
@@ -44,12 +63,38 @@ impl DiskMap {
         }
         Self { disk: files }
     }
+
+    fn defragment_retain_blocks(&mut self) -> Self {
+        let mut disk = VecDeque::new();
+
+        while let Some(block) = self.disk.pop_front() {
+            match block {
+                Block::File { .. } => disk.push_back(block),
+                Block::Free { size: mut free } => {
+                    (0..self.disk.len()).rev().into_iter().for_each(|i| {
+                        if let Block::File { size, .. } = self.disk[i] {
+                            if size <= free {
+                                disk.push_back(self.disk[i]);
+                                self.disk.remove(i);
+                                self.disk.insert(i, Block::Free { size });
+                                free -= size;
+                            }
+                        }
+                    });
+                    if free > 0 {
+                        disk.push_back(Block::Free { size: free })
+                    }
+                }
+            }
+        }
+        Self { disk }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Block {
-    File(usize),
-    Free,
+    File { id: usize, size: usize },
+    Free { size: usize },
 }
 
 impl From<&str> for DiskMap {
@@ -58,11 +103,16 @@ impl From<&str> for DiskMap {
             puzzle
                 .chars()
                 .enumerate()
-                .fold(VecDeque::new(), |mut block, (id, count)| {
-                    if let Some(count) = count.to_digit(10) {
+                .fold(VecDeque::new(), |mut block, (id, size)| {
+                    if let Some(count) = size.to_digit(10) {
                         match id % 2 {
-                            0 => (0..count).for_each(|_| block.push_back(Block::File(id / 2))),
-                            _ => (0..count).for_each(|_| block.push_back(Block::Free)),
+                            0 => block.push_back(Block::File {
+                                id: id / 2,
+                                size: count as usize,
+                            }),
+                            _ => block.push_back(Block::Free {
+                                size: count as usize,
+                            }),
                         }
                     }
                     block
