@@ -71,7 +71,7 @@ impl DiskMap {
             match block {
                 Block::File { .. } => disk.push_back(block),
                 Block::Free { size: mut free } => {
-                    (0..self.disk.len()).rev().into_iter().for_each(|i| {
+                    (0..self.disk.len()).rev().for_each(|i| {
                         if let Block::File { size, .. } = self.disk[i] {
                             if size <= free {
                                 disk.push_back(self.disk[i]);
