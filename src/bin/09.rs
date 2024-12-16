@@ -46,22 +46,22 @@ impl DiskMap {
     }
 
     fn defragment(&mut self) -> Self {
-        let mut files = VecDeque::new();
+        let mut disk = VecDeque::new();
 
         while let Some(block) = self.disk.pop_front() {
             match block {
-                Block::File { .. } => files.push_back(block),
+                Block::File { .. } => disk.push_back(block),
                 Block::Free { .. } => {
                     while let Some(block) = self.disk.pop_back() {
                         if let Block::File { .. } = block {
-                            files.push_back(block);
+                            disk.push_back(block);
                             break;
                         }
                     }
                 }
             }
         }
-        Self { disk: files }
+        Self { disk }
     }
 
     fn defragment_retain_blocks(&mut self) -> Self {
@@ -81,6 +81,7 @@ impl DiskMap {
                             }
                         }
                     });
+
                     if free > 0 {
                         disk.push_back(Block::Free { size: free })
                     }
@@ -104,14 +105,14 @@ impl From<&str> for DiskMap {
                 .chars()
                 .enumerate()
                 .fold(VecDeque::new(), |mut block, (id, size)| {
-                    if let Some(count) = size.to_digit(10) {
+                    if let Some(size) = size.to_digit(10) {
                         match id % 2 {
                             0 => block.push_back(Block::File {
                                 id: id / 2,
-                                size: count as usize,
+                                size: size as usize,
                             }),
                             _ => block.push_back(Block::Free {
-                                size: count as usize,
+                                size: size as usize,
                             }),
                         }
                     }
